@@ -784,5 +784,4 @@
     <string name="no_backup_files_found_selected_folder">No backup files found in the selected folder</string>
     <string name="simplified_player_dialog">Simplified player dialog</string>
     <string name="simplified_player_dialog_des">Shows a simplified source selection dialog before playing links</string>
-    <string name="pick_source">Pick source</string>
 </resources>
