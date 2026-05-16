@@ -63,6 +63,7 @@ import androidx.core.graphics.toColorInt
 import com.lagradost.cloudstream3.ui.setRecycledViewPool
 
 class HomeParentItemAdapterPreview(
+    val fragment: LifecycleOwner,
     private val viewModel: HomeViewModel,
     private val accountViewModel: AccountViewModel
 ) : ParentItemAdapter(
@@ -104,7 +105,7 @@ class HomeParentItemAdapterPreview(
             )
         }
 
-        return HeaderViewHolder(binding, viewModel, accountViewModel)
+        return HeaderViewHolder(binding, viewModel, accountViewModel, fragment)
     }
 
     override fun onBindHeader(holder: ViewHolderState<Bundle>) {
@@ -131,6 +132,7 @@ class HomeParentItemAdapterPreview(
         val binding: ViewBinding,
         val viewModel: HomeViewModel,
         accountViewModel: AccountViewModel,
+        fragment: LifecycleOwner,
     ) :
         ViewHolderState<Bundle>(binding) {
 
@@ -542,7 +544,7 @@ class HomeParentItemAdapterPreview(
             headProfilePicCard?.isGone = isLayout(TV or EMULATOR)
             alternateHeadProfilePicCard?.isGone = isLayout(TV or EMULATOR)
 
-            (headProfilePic ?: alternateHeadProfilePic)?.observe(viewModel.currentAccount) { currentAccount ->
+            fragment.observe(viewModel.currentAccount) { currentAccount ->
                 headProfilePic?.loadImage(currentAccount?.image)
                 alternateHeadProfilePic?.loadImage(currentAccount?.image)
             }
@@ -773,7 +775,7 @@ class HomeParentItemAdapterPreview(
         fun onViewAttachedToWindow() {
             previewViewpager.registerOnPageChangeCallback(previewCallback)
 
-            previewViewpager.apply {
+            binding.root.findViewTreeLifecycleOwner()?.apply {
                 observe(viewModel.preview) {
                     updatePreview(it)
                 }
@@ -798,7 +800,7 @@ class HomeParentItemAdapterPreview(
                     }
                     toggleListHolder?.isGone = visible.isEmpty()
                 }
-            }
+            } ?: debugException { "Expected findViewTreeLifecycleOwner" }
         }
     }
 }

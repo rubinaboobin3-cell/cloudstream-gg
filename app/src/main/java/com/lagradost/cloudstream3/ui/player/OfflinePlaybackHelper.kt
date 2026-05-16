@@ -1,6 +1,7 @@
 package com.lagradost.cloudstream3.ui.player
 
 import android.app.Activity
+import android.content.ContentUris
 import android.content.Intent
 import android.net.Uri
 import androidx.core.content.ContextCompat.getString
@@ -18,8 +19,8 @@ object OfflinePlaybackHelper {
                 LinkGenerator(
                     listOf(
                         BasicLink(url)
-                    ), id = url.hashCode()
-                ), 0
+                    )
+                )
             )
         )
     }
@@ -51,7 +52,7 @@ object OfflinePlaybackHelper {
                     links,
                     subs,
                     if (id != -1) id else null,
-                ), 0
+                )
             )
         )
         return true
@@ -72,10 +73,11 @@ object OfflinePlaybackHelper {
                             name = name ?: getString(activity, R.string.downloaded_file),
                             // well not the same as a normal id, but we take it as users may want to
                             // play downloaded files and save the location
-                            id = uri.lastPathSegment?.toLongOrNull()?.hashCode() ?: uri.lastPathSegment?.hashCode()
+                            id = kotlin.runCatching { ContentUris.parseId(uri) }.getOrNull()
+                                ?.hashCode()
                         )
                     )
-                ), 0
+                )
             )
         )
     }

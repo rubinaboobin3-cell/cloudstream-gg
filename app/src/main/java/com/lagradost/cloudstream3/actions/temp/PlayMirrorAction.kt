@@ -35,11 +35,9 @@ class PlayMirrorAction : VideoClickAction() {
     ) {
         //Implemented a generator to handle the single
         val activity = context as? Activity ?: return
-        val link = index?.let { result.links[it] }
         val generatorMirror = object : VideoGenerator<ResultEpisode>(listOf(video)) {
             override val hasCache: Boolean = false
             override val canSkipLoading: Boolean = false
-            override fun getId(index: Int): Int = video.id
 
             override suspend fun generateLinks(
                 clearCache: Boolean,
@@ -49,7 +47,7 @@ class PlayMirrorAction : VideoClickAction() {
                 offset: Int,
                 isCasting: Boolean
             ): Boolean {
-                index?.let { callback(link to null) }
+                index?.let { callback(result.links[it] to null) }
                 result.subs.forEach { subtitle -> subtitleCallback(subtitle) }
                 return true
             }
@@ -58,7 +56,7 @@ class PlayMirrorAction : VideoClickAction() {
         activity.navigate(
             R.id.global_to_navigation_player,
             GeneratorPlayer.newInstance(
-                generatorMirror, 0, result.syncData
+                generatorMirror, result.syncData
             )
         )
     }

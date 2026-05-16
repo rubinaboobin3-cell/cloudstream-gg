@@ -6,7 +6,7 @@ import com.lagradost.cloudstream3.utils.ExtractorLinkType
 class ExtractorLinkGenerator(
     private val links: List<ExtractorLink>,
     private val subtitles: List<SubtitleData>,
-) : NoVideoGenerator(null) {
+) : NoVideoGenerator() {
     override suspend fun generateLinks(
         clearCache: Boolean,
         sourceTypes: Set<ExtractorLinkType>,

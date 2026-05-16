@@ -13,7 +13,6 @@ import com.lagradost.cloudstream3.syncproviders.providers.SimklApi
 import com.lagradost.cloudstream3.syncproviders.providers.SubDlApi
 import com.lagradost.cloudstream3.syncproviders.providers.SubSourceApi
 import com.lagradost.cloudstream3.utils.DataStoreHelper
-import com.lagradost.cloudstream3.utils.videoskip.AnimeSkipAuth
 import java.util.concurrent.TimeUnit
 
 abstract class AccountManager {
@@ -29,7 +28,6 @@ abstract class AccountManager {
         val addic7ed = Addic7ed()
         val subDlApi = SubDlApi()
         val subSourceApi = SubSourceApi()
-        val animeSkipApi = AnimeSkipAuth()
 
         var cachedAccounts: MutableMap<String, Array<AuthData>>
         var cachedAccountIds: MutableMap<String, Int>
@@ -69,8 +67,7 @@ abstract class AccountManager {
             SyncRepo(localListApi),
             SubtitleRepo(openSubtitlesApi),
             SubtitleRepo(addic7ed),
-            SubtitleRepo(subDlApi),
-            PlainAuthRepo(animeSkipApi)
+            SubtitleRepo(subDlApi)
         )
 
         fun updateAccountIds() {

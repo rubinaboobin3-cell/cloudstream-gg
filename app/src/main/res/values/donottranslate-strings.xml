@@ -18,6 +18,7 @@
     <string name="quality_pref_key">quality_pref_key</string>
     <string name="quality_pref_mobile_data_key">quality_pref_mobile_data_key</string>
     <string name="player_default_key">player_default_key</string>
+    <string name="simplified_player_dialog_key">simplified_player_dialog_key</string>
     <string name="prefer_limit_title_key">prefer_limit_title_key</string>
     <string name="prefer_limit_show_player_info">prefer_limit_show_player_info</string>
     <string name="apk_installer_key">apk_installer_key</string>
@@ -40,7 +41,6 @@
     <string name="autoplay_next_key">autoplay_next_key</string>
     <string name="display_sub_key">display_sub_key</string>
     <string name="show_fillers_key">show_fillers_key</string>
-    <string name="show_player_metadata_key">show_player_metadata_key</string>
     <string name="show_trailers_key">show_trailers_key</string>
     <string name="show_kitsu_posters_key">show_kitsu_posters_key</string>
     <string name="show_cast_in_details_key">show_cast_in_details_key</string>
@@ -100,7 +100,6 @@
     <string name="kitsu_key">kitsu_key</string>
     <string name="opensubtitles_key">opensubtitles_key</string>
     <string name="subdl_key">subdl_key</string>
-    <string name="animeskip_key">animeskip_key</string>
 
     <string name="pref_category_security_key">pref_category_security_key</string>
     <string name="pref_category_gestures_key">pref_category_gestures_key</string>

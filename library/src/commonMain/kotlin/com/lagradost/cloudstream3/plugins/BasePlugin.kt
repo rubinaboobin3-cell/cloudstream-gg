@@ -31,9 +31,7 @@ abstract class BasePlugin {
     fun registerExtractorAPI(element: ExtractorApi) {
         Log.i(PLUGIN_TAG, "Adding ${element.name} (${element.mainUrl}) ExtractorApi")
         element.sourcePlugin = this.filename
-        synchronized(extractorApis) {
-            extractorApis.add(element)
-        }
+        extractorApis.add(element)
     }
 
     /**

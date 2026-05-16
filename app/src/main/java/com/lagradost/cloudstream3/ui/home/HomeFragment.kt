@@ -651,6 +651,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(
             }
 
             homeMasterAdapter = HomeParentItemAdapterPreview(
+                fragment = this@HomeFragment,
                 homeViewModel, accountViewModel
             )
             homeMasterRecycler.setRecycledViewPool(ParentItemAdapter.sharedPool)

@@ -8,7 +8,6 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.edit
 import androidx.core.os.ConfigurationCompat
-import androidx.fragment.app.Fragment
 import androidx.preference.PreferenceManager
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.lagradost.cloudstream3.APIHolder.allProviders
@@ -156,21 +155,14 @@ class SettingsGeneral : BasePreferenceFragmentCompat() {
         val lang: String,
     )
 
-    companion object {
-        fun Fragment.pickDownloadPath(uri: Uri?, path: String?) {
-            if (uri == null) return
-
-            val context = context ?: CloudStreamApp.context ?: return
-            val visual = path ?: uri.toString()
+    private val pathPicker = getChooseFolderLauncher { uri, path ->
+        val context = context ?: CloudStreamApp.context ?: return@getChooseFolderLauncher
+        (path ?: uri.toString()).let {
             PreferenceManager.getDefaultSharedPreferences(context).edit {
                 putString(getString(R.string.download_path_key), uri.toString())
-                putString(context.getString(R.string.download_path_key_visual), visual)
+                putString(getString(R.string.download_path_key_visual), it)
             }
         }
-    }
-
-    private val pathPicker = getChooseFolderLauncher { uri, path ->
-        pickDownloadPath(uri, path)
     }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {

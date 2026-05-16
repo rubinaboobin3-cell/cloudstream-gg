@@ -67,6 +67,7 @@ class ExceptionHandler(
     }
 }
 
+@Prerelease
 class CloudStreamApp : Application(), SingletonImageLoader.Factory {
 
     override fun onCreate() {
@@ -89,6 +90,8 @@ class CloudStreamApp : Application(), SingletonImageLoader.Factory {
     override fun attachBaseContext(base: Context?) {
         super.attachBaseContext(base)
         context = base
+        // This can be removed without deprecation after next stable
+        AcraApplication.context = context
     }
 
     override fun newImageLoader(context: PlatformContext): ImageLoader {

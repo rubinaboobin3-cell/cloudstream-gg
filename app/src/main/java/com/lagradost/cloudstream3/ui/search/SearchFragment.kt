@@ -23,7 +23,6 @@ import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.view.doOnLayout
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
@@ -415,7 +414,7 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
             binding.searchFilter.isFocusable = true
             binding.searchFilter.isFocusableInTouchMode = true
         }
-
+        
         // Hide suggestions when search view loses focus (phone only)
         if (isLayout(PHONE)) {
             binding.mainSearch.setOnQueryTextFocusChangeListener { _, hasFocus ->
@@ -573,7 +572,7 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
                     removeKey("$currentAccount/$SEARCH_HISTORY_KEY", searchItem.key)
                     searchViewModel.updateHistory()
                 }
-
+                
                 SEARCH_HISTORY_CLEAR -> {
                     // Show confirmation dialog (from footer button)
                     activity?.let { ctx ->
@@ -654,11 +653,7 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
 
             sq?.let { query ->
                 if (query.isBlank()) return@let
-
-                // Queries are dropped if you are submitted before layout finishes
-                mainSearch.doOnLayout {
-                    mainSearch.setQuery(query, true)
-                }
+                mainSearch.setQuery(query, true)
                 // Clear the query as to not make it request the same query every time the page is opened
                 arguments?.remove(SEARCH_QUERY)
                 savedInstanceState?.remove(SEARCH_QUERY)
@@ -679,7 +674,7 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
             val hasSuggestions = suggestions.isNotEmpty()
             binding.searchSuggestionsRecycler.isVisible = hasSuggestions
             (binding.searchSuggestionsRecycler.adapter as? SearchSuggestionAdapter?)?.submitList(suggestions)
-
+            
             // On non-phone layouts, redirect focus and handle back button
             if (!isLayout(PHONE)) {
                 if (hasSuggestions) {

@@ -119,14 +119,13 @@ class ExtensionsFragment : BaseFragment<FragmentExtensionsBinding>(
             }, { repo ->
                 // Prompt user before deleting repo
                 main {
-                    val uiContext = context ?: binding.root.context
-                    val builder = AlertDialog.Builder(uiContext)
+                    val builder = AlertDialog.Builder(context ?: binding.root.context)
                     val dialogClickListener =
                         DialogInterface.OnClickListener { _, which ->
                             when (which) {
                                 DialogInterface.BUTTON_POSITIVE -> {
                                     ioSafe {
-                                        RepositoryManager.removeRepository(uiContext.applicationContext, repo)
+                                        RepositoryManager.removeRepository(binding.root.context, repo)
                                         extensionViewModel.loadStats()
                                         extensionViewModel.loadRepositories()
                                     }
@@ -137,7 +136,9 @@ class ExtensionsFragment : BaseFragment<FragmentExtensionsBinding>(
                         }
 
                     builder.setTitle(R.string.delete_repository)
-                        .setMessage(uiContext.getString(R.string.delete_repository_plugins))
+                        .setMessage(
+                            context?.getString(R.string.delete_repository_plugins)
+                        )
                         .setPositiveButton(R.string.delete, dialogClickListener)
                         .setNegativeButton(R.string.cancel, dialogClickListener)
                         .show().setDefaultFocus()
@@ -209,9 +210,9 @@ class ExtensionsFragment : BaseFragment<FragmentExtensionsBinding>(
 
             binding.applyBtt.setOnClickListener secondListener@{
                 val name = binding.repoNameInput.text?.toString()
-                val urlInput = binding.repoUrlInput.text?.toString()
                 ioSafe {
-                    val url = urlInput?.let { it1 -> RepositoryManager.parseRepoUrl(it1) }
+                    val url = binding.repoUrlInput.text?.toString()
+                        ?.let { it1 -> RepositoryManager.parseRepoUrl(it1) }
                     if (url.isNullOrBlank()) {
                         main {
                             showToast(R.string.error_invalid_data, Toast.LENGTH_SHORT)

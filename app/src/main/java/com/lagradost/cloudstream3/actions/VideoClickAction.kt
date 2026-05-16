@@ -28,6 +28,7 @@ import com.lagradost.cloudstream3.actions.temp.ViewM3U8Action
 import com.lagradost.cloudstream3.actions.temp.VlcNightlyPackage
 import com.lagradost.cloudstream3.actions.temp.VlcPackage
 import com.lagradost.cloudstream3.actions.temp.WebVideoCastPackage
+import com.lagradost.cloudstream3.actions.temp.AnyExternalPlayerAction
 import com.lagradost.cloudstream3.actions.temp.fcast.FcastAction
 import com.lagradost.cloudstream3.mvvm.logError
 import com.lagradost.cloudstream3.ui.result.LinkLoadingResult
@@ -64,6 +65,8 @@ object VideoClickActionHolder {
         MpvYTDLPackage(),
         MpvKtPackage(),
         MpvKtPreviewPackage(),
+        // Generic external player (system app chooser)
+        AnyExternalPlayerAction(),
         // Always Ask option
         AlwaysAskAction(),
         // added by plugins

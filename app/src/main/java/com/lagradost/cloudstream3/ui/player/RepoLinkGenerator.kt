@@ -9,8 +9,8 @@ import com.lagradost.cloudstream3.ui.result.ResultEpisode
 import com.lagradost.cloudstream3.utils.AppContextUtils.html
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.ExtractorLinkType
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicInteger
+import kotlin.math.max
+import kotlin.math.min
 
 data class Cache(
     val linkCache: MutableSet<ExtractorLink>,
@@ -23,8 +23,9 @@ data class Cache(
 
 class RepoLinkGenerator(
     episodes: List<ResultEpisode>,
+    currentIndex: Int = 0,
     val page: LoadResponse? = null,
-) : VideoGenerator<ResultEpisode>(episodes) {
+) : VideoGenerator<ResultEpisode>(episodes, currentIndex) {
     companion object {
         const val TAG = "RepoLink"
         val cache: HashMap<Pair<String, Int>, Cache> =
@@ -33,7 +34,6 @@ class RepoLinkGenerator(
 
     override val hasCache = true
     override val canSkipLoading = true
-    override fun getId(index: Int): Int? = videos.getOrNull(index)?.id
 
     // this is a simple array that is used to instantly load links if they are already loaded
     //var linkCache = Array<Set<ExtractorLink>>(size = episodes.size, init = { setOf() })
@@ -48,7 +48,7 @@ class RepoLinkGenerator(
         offset: Int,
         isCasting: Boolean,
     ): Boolean {
-        val current = videos.getOrNull(offset) ?: return false
+        val current = getCurrent(offset) ?: return false
 
         val currentCache = synchronized(cache) {
             cache[current.apiName to current.id] ?: Cache(
@@ -61,12 +61,10 @@ class RepoLinkGenerator(
             }
         }
 
-        // These act as a general filter to prevent duplication of links or names
-        // Avoid any possible ConcurrentModificationException
-        val currentLinksUrls = ConcurrentHashMap.newKeySet<String>()
-        val currentSubsUrls = ConcurrentHashMap.newKeySet<String>()
-        // Use atomics as otherwise we get race conditions when incrementing, while rare it did actually happen!
-        val lastCountedSuffix = ConcurrentHashMap<String, AtomicInteger>()
+        // these act as a general filter to prevent duplication of links or names
+        val currentLinksUrls = mutableSetOf<String>()       // makes all urls unique
+        val currentSubsUrls = mutableSetOf<String>()    // makes all subs urls unique
+        val lastCountedSuffix = mutableMapOf<String, UInt>()
 
         synchronized(currentCache) {
             val outdatedCache =
@@ -77,10 +75,7 @@ class RepoLinkGenerator(
                 currentCache.subtitleCache.clear()
                 currentCache.saturated = false
             } else if (currentCache.linkCache.isNotEmpty()) {
-                Log.d(
-                    TAG,
-                    "Resumed previous loading from ${unixTime - currentCache.lastCachedTimestamp}s ago"
-                )
+                Log.d(TAG, "Resumed previous loading from ${unixTime - currentCache.lastCachedTimestamp}s ago")
             }
 
             // call all callbacks
@@ -93,7 +88,8 @@ class RepoLinkGenerator(
 
             currentCache.subtitleCache.forEach { sub ->
                 currentSubsUrls.add(sub.url)
-                lastCountedSuffix.getOrPut(sub.originalName) { AtomicInteger(0) }.incrementAndGet()
+                val suffixCount = lastCountedSuffix.getOrDefault(sub.originalName, 0u) + 1u
+                lastCountedSuffix[sub.originalName] = suffixCount
                 subtitleCallback(sub)
             }
 
@@ -112,15 +108,17 @@ class RepoLinkGenerator(
             subtitleCallback = { file ->
                 Log.d(TAG, "Loaded SubtitleFile: $file")
                 val correctFile = PlayerSubtitleHelper.getSubtitleData(file)
-                if (correctFile.url.isBlank() || !currentSubsUrls.add(correctFile.url)) {
+                if (correctFile.url.isBlank() || currentSubsUrls.contains(correctFile.url)) {
                     return@loadLinks
                 }
+                currentSubsUrls.add(correctFile.url)
 
                 // this part makes sure that all names are unique for UX
-                val nameDecoded = correctFile.originalName.html().toString()
-                    .trim() // `%3Ch1%3Esub%20name…` → `<h1>sub name…` → `sub name…`
-                val suffixCount =
-                    lastCountedSuffix.getOrPut(nameDecoded) { AtomicInteger(0) }.incrementAndGet()
+
+                val nameDecoded = correctFile.originalName.html().toString().trim() // `%3Ch1%3Esub%20name…` → `<h1>sub name…` → `sub name…`
+
+                val suffixCount = lastCountedSuffix.getOrDefault(nameDecoded, 0u) +1u
+                lastCountedSuffix[nameDecoded] = suffixCount
 
                 val updatedFile =
                     correctFile.copy(originalName = nameDecoded, nameSuffix = "$suffixCount")
@@ -134,9 +132,10 @@ class RepoLinkGenerator(
             },
             callback = { link ->
                 Log.d(TAG, "Loaded ExtractorLink: $link")
-                if (link.url.isBlank() || !currentLinksUrls.add(link.url)) {
+                if (link.url.isBlank() || currentLinksUrls.contains(link.url)) {
                     return@loadLinks
                 }
+                currentLinksUrls.add(link.url)
 
                 synchronized(currentCache) {
                     if (currentCache.linkCache.add(link)) {

@@ -3,6 +3,8 @@ package com.lagradost.cloudstream3.network
 import android.annotation.SuppressLint
 import android.content.Context
 import android.net.http.SslError
+import android.os.Handler
+import android.os.Looper
 import android.webkit.*
 import com.lagradost.api.Log
 import com.lagradost.api.getContext
@@ -12,7 +14,6 @@ import com.lagradost.cloudstream3.mvvm.logError
 import com.lagradost.cloudstream3.mvvm.safe
 import com.lagradost.cloudstream3.utils.Coroutines.main
 import com.lagradost.cloudstream3.utils.Coroutines.mainWork
-import com.lagradost.cloudstream3.utils.Coroutines.runOnMainThread
 import com.lagradost.cloudstream3.utils.Coroutines.threadSafeListOf
 import com.lagradost.nicehttp.requestCreator
 import kotlinx.coroutines.delay
@@ -122,6 +123,8 @@ actual class WebViewResolver actual constructor(
         val extraRequestList = threadSafeListOf<Request>()
 
         main {
+            // Useful for debugging
+            WebView.setWebContentsDebuggingEnabled(true)
             try {
                 webView = WebView(
                     (getContext() as? Context)
@@ -149,7 +152,8 @@ actual class WebViewResolver actual constructor(
                         Log.i(TAG, "Loading WebView URL: $webViewUrl")
 
                         if (script != null) {
-                            runOnMainThread {
+                            val handler = Handler(Looper.getMainLooper())
+                            handler.post {
                                 view.evaluateJavascript(script)
                                 { scriptCallback?.invoke(it) }
                             }

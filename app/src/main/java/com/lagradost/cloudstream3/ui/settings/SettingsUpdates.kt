@@ -58,8 +58,6 @@ class SettingsUpdates : BasePreferenceFragmentCompat() {
     }
 
     private val pathPicker = getChooseFolderLauncher { uri, path ->
-        if(uri == null) return@getChooseFolderLauncher
-
         val context = context ?: CloudStreamApp.context ?: return@getChooseFolderLauncher
         (path ?: uri.toString()).let {
             PreferenceManager.getDefaultSharedPreferences(context).edit {
@@ -69,6 +67,7 @@ class SettingsUpdates : BasePreferenceFragmentCompat() {
         }
     }
 
+    @Suppress("DEPRECATION_ERROR")
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         hideKeyboard()
         setPreferencesFromResource(R.xml.settings_updates, rootKey)
@@ -207,9 +206,8 @@ class SettingsUpdates : BasePreferenceFragmentCompat() {
             val prefNames = resources.getStringArray(R.array.apk_installer_pref)
             val prefValues = resources.getIntArray(R.array.apk_installer_values)
 
-            // Use legacy installer as default until we make the new installer completely reliable
             val currentInstaller =
-                settingsManager.getInt(getString(R.string.apk_installer_key), 1)
+                settingsManager.getInt(getString(R.string.apk_installer_key), 0)
 
             activity?.showBottomDialog(
                 prefNames.toList(),

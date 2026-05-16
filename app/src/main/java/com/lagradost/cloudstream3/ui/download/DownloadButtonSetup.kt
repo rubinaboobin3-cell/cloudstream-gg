@@ -162,8 +162,7 @@ object DownloadButtonSetup {
                     }
                     act.navigate(
                         R.id.global_to_navigation_player, GeneratorPlayer.newInstance(
-                            DownloadFileGenerator(items),
-                            items.indexOfFirst { it.id == click.data.id }
+                            DownloadFileGenerator(items).apply { goto(items.indexOfFirst { it.id == click.data.id }) }
                         )
                     )
                 }

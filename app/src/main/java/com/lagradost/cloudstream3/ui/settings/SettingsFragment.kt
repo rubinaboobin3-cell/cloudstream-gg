@@ -27,7 +27,6 @@ import com.lagradost.cloudstream3.ui.settings.Globals.TV
 import com.lagradost.cloudstream3.ui.settings.Globals.isLandscape
 import com.lagradost.cloudstream3.ui.settings.Globals.isLayout
 import com.lagradost.cloudstream3.utils.DataStoreHelper
-import com.lagradost.cloudstream3.utils.GitInfo.currentCommitHash
 import com.lagradost.cloudstream3.utils.ImageLoader.loadImage
 import com.lagradost.cloudstream3.utils.UIHelper.clipboardHelper
 import com.lagradost.cloudstream3.utils.UIHelper.fixSystemBarsPadding
@@ -248,7 +247,7 @@ class SettingsFragment : BaseFragment<MainSettingsBinding>(
         }
 
         val appVersion = BuildConfig.VERSION_NAME
-        val commitHash = activity?.currentCommitHash() ?: ""
+        val commitInfo = getString(R.string.commit_hash)
         val buildTimestamp = SimpleDateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG,
             Locale.getDefault()
         ).apply { timeZone = TimeZone.getTimeZone("UTC")
@@ -256,9 +255,8 @@ class SettingsFragment : BaseFragment<MainSettingsBinding>(
 
         binding.appVersion.text = appVersion
         binding.buildDate.text = buildTimestamp
-        binding.commitHash.text = commitHash
         binding.appVersionInfo.setOnLongClickListener {
-            clipboardHelper(txt(R.string.extension_version), "$appVersion $commitHash $buildTimestamp")
+            clipboardHelper(txt(R.string.extension_version), "$appVersion $commitInfo $buildTimestamp")
             true
         }
     }

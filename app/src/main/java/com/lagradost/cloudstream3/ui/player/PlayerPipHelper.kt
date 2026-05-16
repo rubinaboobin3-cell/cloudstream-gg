@@ -128,7 +128,7 @@ object PlayerPipHelper {
             getRemoteAction(
                 activity,
                 R.drawable.baseline_headphones_24,
-                R.string.audio_singular,
+                R.string.audio_singluar,
                 CSPlayerEvent.PlayAsAudio
             )
         )

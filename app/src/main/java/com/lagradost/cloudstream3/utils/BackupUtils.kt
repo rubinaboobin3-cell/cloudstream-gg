@@ -21,11 +21,15 @@ import com.lagradost.cloudstream3.syncproviders.AccountManager
 import com.lagradost.cloudstream3.syncproviders.providers.AniListApi.Companion.ANILIST_CACHED_LIST
 import com.lagradost.cloudstream3.syncproviders.providers.MALApi.Companion.MAL_CACHED_LIST
 import com.lagradost.cloudstream3.syncproviders.providers.KitsuApi.Companion.KITSU_CACHED_LIST
+import com.lagradost.cloudstream3.ui.settings.Globals.EMULATOR
+import com.lagradost.cloudstream3.ui.settings.Globals.TV
+import com.lagradost.cloudstream3.ui.settings.Globals.isLayout
 import com.lagradost.cloudstream3.utils.Coroutines.ioSafe
 import com.lagradost.cloudstream3.utils.Coroutines.main
 import com.lagradost.cloudstream3.utils.DataStore.getDefaultSharedPrefs
 import com.lagradost.cloudstream3.utils.DataStore.getSharedPrefs
 import com.lagradost.cloudstream3.utils.DataStore.mapper
+import com.lagradost.cloudstream3.utils.SingleSelectionHelper.showDialog
 import com.lagradost.cloudstream3.utils.UIHelper.checkWrite
 import com.lagradost.cloudstream3.utils.UIHelper.requestRW
 import com.lagradost.cloudstream3.utils.downloader.VideoDownloadManager.setupStream
@@ -62,7 +66,6 @@ object BackupUtils {
         AccountManager.ACCOUNT_TOKEN,
         AccountManager.ACCOUNT_IDS,
 
-        // TODO proper getter for string res keys to ensure that they are updated
         "biometric_key", // can lock down users if backup is shared on a incompatible device
         "nginx_user", // Nginx user key
 
@@ -104,10 +107,15 @@ object BackupUtils {
         // Prevent backups from automatically starting downloads
         KEY_RESUME_IN_QUEUE,
         KEY_RESUME_PACKAGES,
-        QUEUE_KEY,
+        QUEUE_KEY
+    )
 
-        // Prevent automatic plugin download after restoring backup
-        "auto_download_plugins_key2"
+    private const val BACKUP_FILE_PREFIX = "CS3_Backup_"
+    private const val BACKUP_FILE_EXTENSION = ".txt"
+
+    data class BackupCandidate(
+        val displayName: String,
+        val uri: Uri
     )
 
     /** false if key should not be contained in backup */
@@ -253,39 +261,89 @@ object BackupUtils {
             restoreFileSelector =
                 registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
                     if (uri == null) return@registerForActivityResult
-                    val activity = this
-                    ioSafe {
-                        try {
-                            val input = activity.contentResolver.openInputStream(uri)
-                                ?: return@ioSafe
-
-                            val restoredValue =
-                                mapper.readValue<BackupFile>(input)
-
-                            restore(
-                                activity,
-                                restoredValue,
-                                restoreSettings = true,
-                                restoreDataStore = true
-                            )
-                            activity.runOnUiThread { activity.recreate() }
-                        } catch (e: Exception) {
-                            logError(e)
-                            main { // smth can fail in .format
-                                showToast(
-                                    getString(R.string.restore_failed_format).format(e.toString())
-                                )
-                            }
-                        }
-                    }
+                    restoreFromUri(uri)
                 }
         } catch (e: Exception) {
             logError(e)
         }
     }
 
+    private fun FragmentActivity.restoreFromUri(uri: Uri) {
+        val activity = this
+        ioSafe {
+            try {
+                activity.contentResolver.openInputStream(uri)?.use { input ->
+                    val restoredValue = mapper.readValue<BackupFile>(input)
+
+                    restore(
+                        activity,
+                        restoredValue,
+                        restoreSettings = true,
+                        restoreDataStore = true
+                    )
+                    activity.runOnUiThread { activity.recreate() }
+                } ?: throw IOException("Unable to open backup file")
+            } catch (e: Exception) {
+                logError(e)
+                main {
+                    showToast(
+                        getString(R.string.restore_failed_format).format(e.toString())
+                    )
+                }
+            }
+        }
+    }
+
+    private fun FragmentActivity.getRestoreBackupCandidates(): List<BackupCandidate> {
+        val (configuredDir, configuredPath) = getCurrentBackupDir(this)
+        val backupDir = if (configuredPath.isNullOrBlank()) {
+            getDefaultBackupDir(this)
+        } else {
+            configuredDir
+        } ?: return emptyList()
+
+        return backupDir.listFiles()
+            ?.mapNotNull { file ->
+                val name = file.name() ?: return@mapNotNull null
+                if (!name.startsWith(BACKUP_FILE_PREFIX) || !name.endsWith(BACKUP_FILE_EXTENSION, ignoreCase = true)) {
+                    return@mapNotNull null
+                }
+                val uri = file.uri() ?: return@mapNotNull null
+                BackupCandidate(
+                    displayName = name.substringBeforeLast('.'),
+                    uri = uri
+                )
+            }
+            ?.sortedByDescending { it.displayName }
+            ?: emptyList()
+    }
+
+    private fun FragmentActivity.showTvBackupRestorePicker(): Boolean {
+        val candidates = getRestoreBackupCandidates()
+        if (candidates.isEmpty()) return false
+
+        showDialog(
+            items = candidates.map { it.displayName },
+            selectedIndex = 0,
+            name = getString(R.string.restore_from_downloads),
+            showApply = false,
+            dismissCallback = {}
+        ) { index ->
+            candidates.getOrNull(index)?.let { selected ->
+                restoreFromUri(selected.uri)
+            }
+        }
+        return true
+    }
+
     fun FragmentActivity.restorePrompt() {
         runOnUiThread {
+            if (isLayout(TV or EMULATOR)) {
+                if (!showTvBackupRestorePicker()) {
+                    showToast(R.string.no_backup_files_found_selected_folder)
+                }
+                return@runOnUiThread
+            }
             try {
                 restoreFileSelector?.launch(
                     arrayOf(
@@ -299,8 +357,10 @@ object BackupUtils {
                     )
                 )
             } catch (e: Exception) {
-                showToast(e.message)
                 logError(e)
+                if (!showTvBackupRestorePicker()) {
+                    showToast(e.message)
+                }
             }
         }
     }

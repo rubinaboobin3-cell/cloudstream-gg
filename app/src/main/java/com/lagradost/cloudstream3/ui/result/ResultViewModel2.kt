@@ -1,8 +1,7 @@
 package com.lagradost.cloudstream3.ui.result
 
 import android.app.Activity
-import android.content.Context
-import android.content.DialogInterface
+import android.content.*
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.MainThread
@@ -11,50 +10,27 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.lagradost.cloudstream3.APIHolder
+import androidx.preference.PreferenceManager
+import com.lagradost.cloudstream3.*
+import com.lagradost.cloudstream3.actions.AlwaysAskAction
+import com.lagradost.cloudstream3.actions.VideoClickActionHolder
+import com.lagradost.cloudstream3.actions.temp.AnyExternalPlayerAction
+import com.lagradost.cloudstream3.actions.temp.PlayMirrorAction
 import com.lagradost.cloudstream3.APIHolder.apis
 import com.lagradost.cloudstream3.APIHolder.getApiFromNameNull
 import com.lagradost.cloudstream3.APIHolder.unixTime
 import com.lagradost.cloudstream3.APIHolder.unixTimeMS
-import com.lagradost.cloudstream3.ActorData
-import com.lagradost.cloudstream3.AnimeLoadResponse
 import com.lagradost.cloudstream3.CloudStreamApp.Companion.context
 import com.lagradost.cloudstream3.CloudStreamApp.Companion.setKey
 import com.lagradost.cloudstream3.CommonActivity.activity
 import com.lagradost.cloudstream3.CommonActivity.getCastSession
 import com.lagradost.cloudstream3.CommonActivity.showToast
-import com.lagradost.cloudstream3.DubStatus
-import com.lagradost.cloudstream3.EpisodeResponse
-import com.lagradost.cloudstream3.IDownloadableMinimum
-import com.lagradost.cloudstream3.LiveStreamLoadResponse
-import com.lagradost.cloudstream3.LoadResponse
 import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
 import com.lagradost.cloudstream3.LoadResponse.Companion.getAniListId
 import com.lagradost.cloudstream3.LoadResponse.Companion.getKitsuId
 import com.lagradost.cloudstream3.LoadResponse.Companion.getMalId
 import com.lagradost.cloudstream3.LoadResponse.Companion.isMovie
 import com.lagradost.cloudstream3.LoadResponse.Companion.readIdFromString
-import com.lagradost.cloudstream3.MainActivity
-import com.lagradost.cloudstream3.MovieLoadResponse
-import com.lagradost.cloudstream3.ProviderType
-import com.lagradost.cloudstream3.R
-import com.lagradost.cloudstream3.Score
-import com.lagradost.cloudstream3.SearchResponse
-import com.lagradost.cloudstream3.SeasonData
-import com.lagradost.cloudstream3.ShowStatus
-import com.lagradost.cloudstream3.SimklSyncServices
-import com.lagradost.cloudstream3.SubtitleFile
-import com.lagradost.cloudstream3.TorrentLoadResponse
-import com.lagradost.cloudstream3.TrackerType
-import com.lagradost.cloudstream3.TrailerData
-import com.lagradost.cloudstream3.TvSeriesLoadResponse
-import com.lagradost.cloudstream3.TvType
-import com.lagradost.cloudstream3.VPNStatus
-import com.lagradost.cloudstream3.actions.AlwaysAskAction
-import com.lagradost.cloudstream3.actions.VideoClickActionHolder
-import com.lagradost.cloudstream3.amap
-import com.lagradost.cloudstream3.isEpisodeBased
-import com.lagradost.cloudstream3.isLiveStream
 import com.lagradost.cloudstream3.metaproviders.SyncRedirector
 import com.lagradost.cloudstream3.mvvm.Resource
 import com.lagradost.cloudstream3.mvvm.debugAssert
@@ -71,7 +47,9 @@ import com.lagradost.cloudstream3.syncproviders.SyncAPI
 import com.lagradost.cloudstream3.syncproviders.providers.Kitsu
 import com.lagradost.cloudstream3.ui.APIRepository
 import com.lagradost.cloudstream3.ui.WatchType
+import com.lagradost.cloudstream3.utils.downloader.DownloadQueueManager
 import com.lagradost.cloudstream3.ui.player.GeneratorPlayer
+import com.lagradost.cloudstream3.ui.player.IGenerator
 import com.lagradost.cloudstream3.ui.player.LOADTYPE_ALL
 import com.lagradost.cloudstream3.ui.player.LOADTYPE_CHROMECAST
 import com.lagradost.cloudstream3.ui.player.LOADTYPE_INAPP
@@ -130,8 +108,8 @@ import com.lagradost.cloudstream3.utils.UIHelper.navigate
 import com.lagradost.cloudstream3.utils.UiText
 import com.lagradost.cloudstream3.utils.VIDEO_WATCH_STATE
 import com.lagradost.cloudstream3.utils.downloader.DownloadFileManagement.sanitizeFilename
+import com.lagradost.cloudstream3.utils.downloader.VideoDownloadManager.getDownloadEpisodeMetadata
 import com.lagradost.cloudstream3.utils.downloader.DownloadObjects
-import com.lagradost.cloudstream3.utils.downloader.DownloadQueueManager
 import com.lagradost.cloudstream3.utils.downloader.DownloadUtils.downloadSubtitle
 import com.lagradost.cloudstream3.utils.loadExtractor
 import com.lagradost.cloudstream3.utils.newExtractorLink
@@ -318,12 +296,11 @@ fun LoadResponse.toResultData(repo: APIRepository): ResultData {
                 TvType.Live -> R.string.live_singular
                 TvType.Others -> R.string.other_singular
                 TvType.NSFW -> R.string.nsfw_singular
-                TvType.Music -> R.string.music_singular
+                TvType.Music -> R.string.music_singlar
                 TvType.AudioBook -> R.string.audio_book_singular
-                TvType.CustomMedia -> R.string.custom_media_singular
-                TvType.Audio -> R.string.audio_singular
-                TvType.Podcast -> R.string.podcast_singular
-                TvType.Video -> R.string.video_singular
+                TvType.CustomMedia -> R.string.custom_media_singluar
+                TvType.Audio -> R.string.audio_singluar
+                TvType.Podcast -> R.string.podcast_singluar
             }
         ),
         yearText = txt(year?.toString()),
@@ -448,7 +425,7 @@ fun SelectPopup.getOptions(context: Context): List<String> {
 }
 
 data class ExtractedTrailerData(
-    var mirros: List<Pair<ExtractorLink, String>>,//Pair of extracted trailer link and original trailer link
+    var mirros: List<Pair<ExtractorLink,String>>,//Pair of extracted trailer link and original trailer link
     var subtitles: List<SubtitleFile> = emptyList(),
 )
 
@@ -478,8 +455,8 @@ class ResultViewModel2 : ViewModel() {
     private var currentShowFillers: Boolean = false
     var currentRepo: APIRepository? = null
     private var currentId: Int? = null
-    private var fillers: HashSet<Int> = hashSetOf()
-    private var generator: RepoLinkGenerator? = null
+    private var fillers: Map<Int, Boolean> = emptyMap()
+    private var generator: IGenerator? = null
     private var preferDubStatus: DubStatus? = null
     private var preferStartEpisode: Int? = null
     private var preferStartSeason: Int? = null
@@ -1292,10 +1269,9 @@ class ResultViewModel2 : ViewModel() {
                     subs += sub
                     updatePage()
                 },
-                isCasting = isCasting,
-                offset = 0
+                isCasting = isCasting
             )
-        } catch (_: CancellationException) {
+        } catch (e: CancellationException) {
             // Do nothing
         } catch (e: Exception) {
             logError(e)
@@ -1544,24 +1520,26 @@ class ResultViewModel2 : ViewModel() {
 
             ACTION_PLAY_EPISODE_IN_PLAYER -> {
                 val list = HashMap<String, String>(currentResponse?.syncData ?: emptyMap())
-                val generator = generator ?: return
 
-                // I know kinda shit to iterate all, but it is 100% sure to work
-                val index = generator.videos.indexOfFirst { value -> value.id == click.data.id }
-
+                generator?.also {
+                    it.getAll() // I know kinda shit to iterate all, but it is 100% sure to work
+                        ?.indexOfFirst { value -> value is ResultEpisode && value.id == click.data.id }
+                        ?.let { index ->
+                            if (index >= 0)
+                                it.goto(index)
+                        }
+                }
                 if (currentResponse?.type == TvType.CustomMedia) {
-                    generator.generateLinks(
-                        offset = index,
+                    generator?.generateLinks(
                         clearCache = true,
-                        isCasting = false,
-                        sourceTypes = LOADTYPE_ALL,
+                        LOADTYPE_ALL,
                         callback = {},
                         subtitleCallback = {})
                 } else {
                     activity?.navigate(
                         R.id.global_to_navigation_player,
                         GeneratorPlayer.newInstance(
-                            generator, index,list
+                            generator ?: return, list
                         )
                     )
                 }
@@ -1607,15 +1585,33 @@ class ResultViewModel2 : ViewModel() {
                 // Special handling for AlwaysAskAction - show player selection dialog
                 if (action is AlwaysAskAction) {
                     activity?.let { ctx ->
-                        // Show player selection dialog
+                        val settingsManager = PreferenceManager.getDefaultSharedPreferences(ctx)
+                        val simplified = settingsManager.getBoolean(
+                            ctx.getString(R.string.simplified_player_dialog_key), false
+                        )
+
                         val players = VideoClickActionHolder.getPlayers(ctx)
                         val options = mutableListOf<Pair<UiText, Int>>()
 
                         // Add internal player option
-                        options.add(txt(R.string.episode_action_play_in_app) to ACTION_PLAY_EPISODE_IN_PLAYER)
+                        // In simplified mode, use PlayMirrorAction so source selection is shown
+                        val internalPlayerId = if (simplified) {
+                            val mirror = VideoClickActionHolder.allVideoClickActions
+                                .firstOrNull { it is PlayMirrorAction }
+                            VideoClickActionHolder.uniqueIdToId(mirror?.uniqueId())
+                                ?: ACTION_PLAY_EPISODE_IN_PLAYER
+                        } else {
+                            ACTION_PLAY_EPISODE_IN_PLAYER
+                        }
+                        options.add(txt(R.string.episode_action_play_in_app) to internalPlayerId)
 
-                        // Add external player options 
-                        options.addAll(players.filter { it !is AlwaysAskAction }.map { player ->
+                        // Add external player options (filtered if simplified mode is on)
+                        val filteredPlayers = if (simplified) {
+                            players.filter { it is AnyExternalPlayerAction }
+                        } else {
+                            players.filter { it !is AlwaysAskAction }
+                        }
+                        options.addAll(filteredPlayers.map { player ->
                             player.name to (VideoClickActionHolder.uniqueIdToId(player.uniqueId())
                                 ?: ACTION_PLAY_EPISODE_IN_PLAYER)
                         })
@@ -1636,10 +1632,15 @@ class ResultViewModel2 : ViewModel() {
 
                 activity?.setKey("last_click_action", action.uniqueId())
                 if (action.oneSource) {
+                    val heading = if (action is PlayMirrorAction) {
+                        txt(R.string.pick_source)
+                    } else {
+                        action.name
+                    }
                     acquireSingleLink(
                         click.data,
                         action.sourceTypes,
-                        action.name
+                        heading
                     ) { (result, index) ->
                         action.runActionSafe(
                             activity,
@@ -1831,10 +1832,11 @@ class ResultViewModel2 : ViewModel() {
     }
 
 
-    private suspend fun updateFillers(data: LoadResponse) {
-        fillers = ioWorkSafe {
-            FillerEpisodeCheck.getFillerEpisodes(data)
-        } ?: hashSetOf()
+    private suspend fun updateFillers(name: String) {
+        fillers =
+            ioWorkSafe {
+                FillerEpisodeCheck.getFillerEpisodes(name)
+            } ?: emptyMap()
     }
 
     fun changeDubStatus(status: DubStatus) {
@@ -2171,8 +2173,8 @@ class ResultViewModel2 : ViewModel() {
     ) {
         _episodes.postValue(Resource.Loading())
 
-        if (updateFillers) {
-            updateFillers(loadResponse)
+        if (updateFillers && loadResponse is AnimeLoadResponse) {
+            updateFillers(loadResponse.name)
         }
 
         val allEpisodes = when (loadResponse) {
@@ -2213,7 +2215,7 @@ class ResultViewModel2 : ViewModel() {
                                     index,
                                     i.score,
                                     i.description,
-                                    fillers.contains(episode),
+                                    fillers.getOrDefault(episode, false),
                                     loadResponse.type,
                                     mainId,
                                     totalIndex,
@@ -2453,34 +2455,26 @@ class ResultViewModel2 : ViewModel() {
             loadResponse.trailers.windowed(limit, limit, true).takeWhile { list ->
                 list.amap { trailerData ->
                     try {
-                        val links = arrayListOf<Pair<ExtractorLink, String>>()
+                        val links = arrayListOf<Pair<ExtractorLink,String>>()
                         val subs = arrayListOf<SubtitleFile>()
                         if (!loadExtractor(
                                 trailerData.extractorUrl,
                                 trailerData.referer,
                                 { subs.add(it) },
-                                {
-                                    links.add(
-                                        Pair(
-                                            it,
-                                            trailerData.extractorUrl
-                                        )
-                                    )
-                                }) && trailerData.raw
+                                { links.add(Pair(it,trailerData.extractorUrl))}) && trailerData.raw
                         ) {
                             arrayListOf(
                                 Pair(
                                     newExtractorLink(
-                                        "",
-                                        "Trailer",
-                                        trailerData.extractorUrl,
-                                        type = INFER_TYPE
-                                    ) {
-                                        this.referer = trailerData.referer ?: ""
-                                        this.quality = Qualities.Unknown.value
-                                        this.headers = trailerData.headers
-                                    }, trailerData.extractorUrl
-                                )
+                                    "",
+                                    "Trailer",
+                                    trailerData.extractorUrl,
+                                    type = INFER_TYPE
+                                ) {
+                                    this.referer = trailerData.referer ?: ""
+                                    this.quality = Qualities.Unknown.value
+                                    this.headers = trailerData.headers
+                                },trailerData.extractorUrl)
                             ) to arrayListOf()
                         } else {
                             links to subs

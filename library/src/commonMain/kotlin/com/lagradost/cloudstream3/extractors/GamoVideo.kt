@@ -1,10 +1,7 @@
 package com.lagradost.cloudstream3.extractors
 
-import com.lagradost.cloudstream3.SubtitleFile
 import com.lagradost.cloudstream3.app
-import com.lagradost.cloudstream3.extractors.helper.JwPlayerHelper
-import com.lagradost.cloudstream3.utils.ExtractorApi
-import com.lagradost.cloudstream3.utils.ExtractorLink
+import com.lagradost.cloudstream3.utils.*
 
 
 open class GamoVideo : ExtractorApi() {
@@ -14,13 +11,21 @@ open class GamoVideo : ExtractorApi() {
 
     override suspend fun getUrl(
         url: String,
-        referer: String?,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        app.get(url, referer = referer).document.select("script")
-            .firstOrNull { JwPlayerHelper.canParseJwScript(it.data()) }!!.let {
-                JwPlayerHelper.extractStreamLinks(it.data(), name, mainUrl, callback, subtitleCallback)
-            }
+        referer: String?
+    ): List<ExtractorLink>? {
+        return app.get(url, referer = referer).document.select("script")
+            .firstOrNull { it.html().contains("sources:") }!!.html().substringAfter("file: \"")
+            .substringBefore("\",").let {
+            listOf(
+                newExtractorLink(
+                    name,
+                    name,
+                    it,
+                ) {
+                    this.referer = url
+                    this.quality = Qualities.Unknown.value
+                }
+            )
+        }
     }
 }

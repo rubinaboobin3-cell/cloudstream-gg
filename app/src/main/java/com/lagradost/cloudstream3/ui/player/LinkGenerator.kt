@@ -40,8 +40,7 @@ class LinkGenerator(
     private val links: List<BasicLink>,
     private val extract: Boolean = true,
     private val refererUrl: String? = null,
-    id: Int?
-) : NoVideoGenerator(id) {
+) : NoVideoGenerator() {
     override suspend fun generateLinks(
         clearCache: Boolean,
         sourceTypes: Set<ExtractorLinkType>,
@@ -79,8 +78,10 @@ class LinkGenerator(
 class MinimalLinkGenerator(
     private val links: List<CloudStreamPackage.MinimalVideoLink>,
     private val subs: List<CloudStreamPackage.MinimalSubtitleLink>,
-    id: Int?
-) : NoVideoGenerator(id) {
+    private val id: Int? = null
+) : NoVideoGenerator() {
+    override fun getCurrentId(): Int? = id
+
     override suspend fun generateLinks(
         clearCache: Boolean,
         sourceTypes: Set<ExtractorLinkType>,

@@ -23,6 +23,12 @@
             android:icon="@drawable/netflix_play"
             android:key="@string/player_default_key"
             android:title="@string/player_pref" />
+        <SwitchPreference
+            android:defaultValue="false"
+            android:icon="@drawable/netflix_play"
+            android:summary="@string/simplified_player_dialog_des"
+            android:title="@string/simplified_player_dialog"
+            app:key="@string/simplified_player_dialog_key" />
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/pref_category_player_layout">
