@@ -12,6 +12,7 @@ import com.lagradost.cloudstream3.CommonActivity
 import com.lagradost.cloudstream3.ErrorLoadingException
 import com.lagradost.cloudstream3.MainActivity
 import com.lagradost.cloudstream3.R
+import com.lagradost.cloudstream3.actions.temp.AnyExternalPlayerAction
 import com.lagradost.cloudstream3.actions.temp.BiglyBTPackage
 import com.lagradost.cloudstream3.actions.temp.CopyClipboardAction
 import com.lagradost.cloudstream3.actions.temp.JustPlayerPackage
@@ -28,13 +29,12 @@ import com.lagradost.cloudstream3.actions.temp.ViewM3U8Action
 import com.lagradost.cloudstream3.actions.temp.VlcNightlyPackage
 import com.lagradost.cloudstream3.actions.temp.VlcPackage
 import com.lagradost.cloudstream3.actions.temp.WebVideoCastPackage
-import com.lagradost.cloudstream3.actions.temp.AnyExternalPlayerAction
 import com.lagradost.cloudstream3.actions.temp.fcast.FcastAction
 import com.lagradost.cloudstream3.mvvm.logError
 import com.lagradost.cloudstream3.ui.result.LinkLoadingResult
 import com.lagradost.cloudstream3.ui.result.ResultEpisode
+import com.lagradost.cloudstream3.utils.Coroutines.atomicListOf
 import com.lagradost.cloudstream3.utils.Coroutines.ioSafe
-import com.lagradost.cloudstream3.utils.Coroutines.threadSafeListOf
 import com.lagradost.cloudstream3.utils.ExtractorLinkType
 import com.lagradost.cloudstream3.utils.UiText
 import kotlinx.coroutines.Dispatchers
@@ -44,7 +44,7 @@ import java.util.concurrent.FutureTask
 import kotlin.reflect.jvm.jvmName
 
 object VideoClickActionHolder {
-    val allVideoClickActions = threadSafeListOf(
+    val allVideoClickActions = atomicListOf(
         // Default
         PlayInBrowserAction(),
         CopyClipboardAction(),
@@ -65,7 +65,6 @@ object VideoClickActionHolder {
         MpvYTDLPackage(),
         MpvKtPackage(),
         MpvKtPreviewPackage(),
-        // Generic external player (system app chooser)
         AnyExternalPlayerAction(),
         // Always Ask option
         AlwaysAskAction(),
