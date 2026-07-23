@@ -21,8 +21,10 @@ import com.lagradost.cloudstream3.actions.temp.MpvExPackage
 import com.lagradost.cloudstream3.actions.temp.MpvKtPackage
 import com.lagradost.cloudstream3.actions.temp.MpvKtPreviewPackage
 import com.lagradost.cloudstream3.actions.temp.MpvPackage
+import com.lagradost.cloudstream3.actions.temp.MpvRxPackage
 import com.lagradost.cloudstream3.actions.temp.MpvYTDLPackage
 import com.lagradost.cloudstream3.actions.temp.NextPlayerPackage
+import com.lagradost.cloudstream3.actions.temp.OnlyPlayer
 import com.lagradost.cloudstream3.actions.temp.PlayInBrowserAction
 import com.lagradost.cloudstream3.actions.temp.PlayMirrorAction
 import com.lagradost.cloudstream3.actions.temp.ViewM3U8Action
@@ -41,7 +43,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.concurrent.Callable
 import java.util.concurrent.FutureTask
-import kotlin.reflect.jvm.jvmName
 
 object VideoClickActionHolder {
     val allVideoClickActions = atomicListOf(
@@ -66,6 +67,8 @@ object VideoClickActionHolder {
         MpvKtPackage(),
         MpvKtPreviewPackage(),
         AnyExternalPlayerAction(),
+        OnlyPlayer(),
+        MpvRxPackage(),
         // Always Ask option
         AlwaysAskAction(),
         // added by plugins
@@ -159,7 +162,7 @@ abstract class VideoClickAction {
         }
     }
 
-    fun uniqueId() = "$sourcePlugin:${this::class.jvmName}"
+    fun uniqueId() = "$sourcePlugin:${this::class.qualifiedName}"
 
     @Throws
     abstract fun shouldShow(context: Context?, video: ResultEpisode?): Boolean
