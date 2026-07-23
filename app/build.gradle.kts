@@ -95,6 +95,20 @@ android {
                 keyAlias = System.getenv("SIGNING_KEY_ALIAS")
                 keyPassword = System.getenv("SIGNING_KEY_PASSWORD")
             }
+            create("release") {
+                val keystorePath = System.getenv("KEYSTORE_PATH")
+                val tmpFilePath = System.getProperty("user.home") + "/work/_temp/keystore/"
+                val releaseStoreFile: File? = if (keystorePath != null) {
+                    File(keystorePath)
+                } else {
+                    File(tmpFilePath).listFiles()?.first()
+                }
+
+                storeFile = releaseStoreFile?.let { file(it) }
+                storePassword = System.getenv("SIGNING_STORE_PASSWORD")
+                keyAlias = System.getenv("SIGNING_KEY_ALIAS")
+                keyPassword = System.getenv("SIGNING_KEY_PASSWORD")
+            }
         }
     }
 
@@ -164,6 +178,9 @@ android {
     productFlavors {
         create("stable") {
             dimension = "state"
+            if (signingConfigs.names.contains("release")) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
         create("prerelease") {
             dimension = "state"
